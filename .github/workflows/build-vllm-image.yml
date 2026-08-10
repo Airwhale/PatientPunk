@@ -1,0 +1,60 @@
+name: build-vllm-image
+# Builds the generic vLLM server image (dispersed/vllm-server) and pushes it to GHCR.
+# Triggers on push to the build branch (auto), or manually from the Actions tab. No local Docker.
+#
+# After the FIRST successful run, make the package public once (Dispersed pulls anonymously and the
+# image holds only public model weights + vLLM — no secrets):
+#   gh api --method PATCH -H "Accept: application/vnd.github+json" \
+#     /user/packages/container/pp-vllm/visibility -f visibility=public
+# (or: GitHub → Packages → pp-vllm → Package settings → Change visibility → Public)
+
+on:
+  push:
+    branches: [shaun/dispersed-vllm-image]
+    paths:
+      - 'dispersed/vllm-server/**'
+      - '.github/workflows/build-vllm-image.yml'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to push"
+        default: "latest"
+        required: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space (vLLM base image is large)
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - name: Lowercase owner for GHCR
+        id: vars
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./dispersed/vllm-server
+          push: true
+          tags: ghcr.io/${{ steps.vars.outputs.owner }}/pp-vllm:${{ github.event.inputs.tag || 'latest' }}
+
+# build re-triggered after enabling Actions
