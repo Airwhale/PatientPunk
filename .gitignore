@@ -44,6 +44,9 @@ cache/
 **/extraction_metadata_*.json
 **/phase1_candidates.json
 
+# Per-run agent provenance belongs with external run data, never in Git.
+**/provenance.md
+
 # Database files
 *.db
 
