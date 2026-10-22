@@ -74,7 +74,7 @@ output:
   s3_uri: "s3://<private-bucket>/<exact-key>/example.db"
   s3_version_id: null
   uploaded_utc: null
-  sha256: "<SHA-256 of finalized local database>"
+  sha256: "<SHA-256 of finalized SQLite database>"
   bytes: 0
   sqlite_integrity_check: "ok"
   schema_version: "<observed version>"
