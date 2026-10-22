@@ -13,7 +13,7 @@ Start with `status: running`; finish as `completed` only after validation and S3
 5. **Methods:** dependency/schema/config/prompt hashes; exact model and effective settings; seeds, concurrency, selection, exclusions, analysis unit, joins, deduplication, missing values, and dose/route/effect attribution.
 6. **Output:** local/S3 paths, version ID, bytes, SHA-256, SQLite integrity, tables/counts, extraction run IDs, and validation commands with expected/observed results. Hash the closed database and verify its S3 copy; ETag is not SHA-256.
 7. **Limits:** errors, corrections, unresolved records, data gaps, eligibility, reproduction limits, and whether effects link to treatment, report, or dose episode.
-8. **Catalog:** after verifying both S3 objects, update `s3://patientpunk/database_catalog/INDEX.md`, creating it from the latest verified inventory if absent. Preserve `INDEX_2026-10-21.md`. Include original and optional catalog-copy URIs, scope label, upload date separate from run date, bytes, SHA-256, and YAML URI. Recalculate totals, timestamp in UTC, upload, and read back the entry. Do not claim completion before verification.
+8. **Catalog:** after verifying both S3 objects, update `s3://patientpunk/INDEX.md`, creating it from the latest verified inventory if absent. Include original and optional catalog-copy URIs, scope label, upload date separate from run date, bytes, SHA-256, and YAML URI. Recalculate totals, timestamp in UTC, upload, and read back the entry. Do not claim completion before verification.
 
 Keep credentials, signed URLs, `.env` contents, patient text, identifiers, databases, and run YAML out of Git. Store data only in private S3. Preserve existing manifests and hand off database and provenance locations.
 
@@ -91,7 +91,7 @@ validation:
   commands_and_results: []
   s3_sha256_verified: false
 catalog:
-  index_uri: "s3://patientpunk/database_catalog/INDEX.md"
+  index_uri: "s3://patientpunk/INDEX.md"
   entry_verified_utc: null
   database_entry_uri: "<exact database S3 URI>"
 limitations: []
