@@ -58,6 +58,17 @@ inapplicable fields. Never invent provenance.
    eligibility limits, data gaps, unit-of-analysis caveats, and anything that
    prevents exact reproduction. State whether side effects are linked to a
    treatment, report, or particular dose episode.
+8. **Database catalog:** after verifying the database and provenance YAML in
+   private S3, update the database directory index under
+   `s3://patientpunk/database_catalog/`. The existing dated inventory is
+   `INDEX_2026-10-21.md`; preserve it as a historical snapshot. Maintain a
+   current `INDEX.md` in that prefix, creating it from the latest verified
+   inventory if absent. Add or update the entry for the exact database object
+   with its original S3 URI, catalog-copy URI if present, accurate treatment or
+   source label, upload date (distinct from run date), byte length, SHA-256, and
+   provenance YAML URI. Recalculate index totals, record the index update UTC,
+   upload the revised index, and read it back to verify the new entry. Do not
+   claim catalog completion until this check succeeds.
 
 Do not include credentials, signed URLs, `.env` contents, raw patient text, or
 direct user identifiers. Do not upload a database or its input data to a public
@@ -140,6 +151,10 @@ output:
 validation:
   commands_and_results: []
   s3_sha256_verified: false
+catalog:
+  index_uri: "s3://patientpunk/database_catalog/INDEX.md"
+  entry_verified_utc: null
+  database_entry_uri: "<exact database S3 URI>"
 limitations: []
 related_manifests: []
 ```
