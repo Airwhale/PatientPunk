@@ -9,7 +9,7 @@ Start with `status: running`; finish as `completed` only after validation and S3
 1. **Identity:** filename, purpose, run ID, status, dates, parent database, and record method.
 2. **Code:** repository, branch, full commit SHA and verified URL, pre-run clean/dirty state. Preserve and hash any relevant uncommitted, secret-free code outside Git.
 3. **Inputs:** exact snapshots and manifests; local/private-S3 paths, S3 version IDs, bytes, SHA-256, source windows, counts, and acquisition commands. Upload missing required inputs when authorized, verify them, or explain the reproduction limit.
-4. **Commands:** an ordered, runnable recipe that rebuilds this exact `.db` from the listed input snapshots and code, plus the commands actually executed. Record directory, shell/runtime, non-secret overrides, times, exit codes, logs, retries, resumes, and script versions; cover acquisition through validation and upload.
+4. **Commands:** one ordered list of the exact commands actually run, sufficient to rebuild this `.db` from the listed inputs and code. Include directory, shell/runtime, non-secret overrides, times, exit codes, logs, retries, resumes, and script versions; cover acquisition through validation and upload. If exact replay is impossible, say why.
 5. **Methods:** dependency/schema/config/prompt hashes; exact model and effective settings; seeds, concurrency, selection, exclusions, analysis unit, joins, deduplication, missing values, and dose/route/effect attribution.
 6. **Output:** local/S3 paths, version ID, bytes, SHA-256, SQLite integrity, tables/counts, extraction run IDs, and validation commands with expected/observed results. Hash the closed database and verify its S3 copy; ETag is not SHA-256.
 7. **Limits:** errors, corrections, unresolved records, data gaps, eligibility, reproduction limits, and whether effects link to treatment, report, or dose episode.
@@ -65,21 +65,15 @@ processing:
   joins_and_deduplication: "<exact rules>"
   missing_data_and_attribution: "<exact rules>"
   random_seeds: []
-commands:
-  reproduce:  # ordered commands to rebuild this exact .db from the listed inputs
-    - stage: "<input retrieval, extraction, database construction, or validation>"
-      command: "<runnable command with non-secret arguments and pinned input paths>"
-      shell: "<shell and version>"
-      working_directory: "<repo- or data-root-relative path>"
-  executed:
-    - stage: "<stage name>"
-      command: "<exact command; secrets redacted by argument name>"
-      shell: "<shell and version>"
-      working_directory: "<repo- or data-root-relative path>"
-      started_utc: "<ISO 8601>"
-      ended_utc: "<ISO 8601>"
-      exit_code: 0
-      log_path: "<relative private path>"
+commands:  # ordered commands actually run; rerun from the pinned inputs
+  - stage: "<stage name>"
+    command: "<exact runnable command; redact secrets by argument name>"
+    shell: "<shell and version>"
+    working_directory: "<repo- or data-root-relative path>"
+    started_utc: "<ISO 8601>"
+    ended_utc: "<ISO 8601>"
+    exit_code: 0
+    log_path: "<relative private path>"
 output:
   local_path: "<data-root-relative path>/example.db"
   s3_uri: "s3://<private-bucket>/<exact-key>/example.db"
