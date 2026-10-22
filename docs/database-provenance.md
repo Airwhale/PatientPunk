@@ -9,7 +9,7 @@ Start with `status: running`; finish as `completed` only after validation and S3
 1. **Identity:** filename, purpose, run ID, status, dates, parent database, and record method.
 2. **Code:** repository, branch, full commit SHA and verified URL, pre-run clean/dirty state. Preserve and hash any relevant uncommitted, secret-free code outside Git.
 3. **Inputs:** exact snapshots and manifests; local/private-S3 paths, S3 version IDs, bytes, SHA-256, source windows, counts, and acquisition commands. Upload missing required inputs when authorized, verify them, or explain the reproduction limit.
-4. **Execution:** ordered planned and actual commands, directory, shell/runtime, non-secret overrides, times, exit codes, logs, retries, resumes, and script versions. Cover acquisition through upload.
+4. **Commands:** an ordered, runnable recipe that rebuilds this exact `.db` from the listed input snapshots and code, plus the commands actually executed. Record directory, shell/runtime, non-secret overrides, times, exit codes, logs, retries, resumes, and script versions; cover acquisition through validation and upload.
 5. **Methods:** dependency/schema/config/prompt hashes; exact model and effective settings; seeds, concurrency, selection, exclusions, analysis unit, joins, deduplication, missing values, and dose/route/effect attribution.
 6. **Output:** local/S3 paths, version ID, bytes, SHA-256, SQLite integrity, tables/counts, extraction run IDs, and validation commands with expected/observed results. Hash the closed database and verify its S3 copy; ETag is not SHA-256.
 7. **Limits:** errors, corrections, unresolved records, data gaps, eligibility, reproduction limits, and whether effects link to treatment, report, or dose episode.
@@ -66,7 +66,11 @@ processing:
   missing_data_and_attribution: "<exact rules>"
   random_seeds: []
 commands:
-  planned: []
+  reproduce:  # ordered commands to rebuild this exact .db from the listed inputs
+    - stage: "<input retrieval, extraction, database construction, or validation>"
+      command: "<runnable command with non-secret arguments and pinned input paths>"
+      shell: "<shell and version>"
+      working_directory: "<repo- or data-root-relative path>"
   executed:
     - stage: "<stage name>"
       command: "<exact command; secrets redacted by argument name>"
