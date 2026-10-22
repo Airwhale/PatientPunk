@@ -1,86 +1,25 @@
 # Database provenance and S3 publication
 
-Use this guide whenever an agent creates, changes, reruns, or uploads a SQLite
-`.db` file for PatientPunk or Lived Evidence. Keep patient data and run artifacts
-outside Git. This file is the versioned policy, not a provenance record for a
-particular database.
+For every PatientPunk/Lived Evidence `.db` created, changed, rerun, or uploaded, place `<stem>_provenance.yaml` beside it locally and in private S3. Never overwrite a database snapshot or its YAML. Multi-database reports also need `<analysis-name>_provenance.yaml` with all inputs and join, filter, deduplication, and denominator rules.
 
-## Required artifact
+Start with `status: running`; finish as `completed` only after validation and S3 verification. Otherwise record `failed`/`interrupted` and partial outputs. Label backfills `retrospective`; distinguish observed from reconstructed facts. Use UTC ISO 8601 and explained `null` values. Never invent provenance.
 
-For `example.db`, create `example_provenance.yaml`. Keep it beside the database
-locally and upload the same YAML beside the database in its private S3 prefix.
-If a database is updated by multiple runs, give each immutable database snapshot
-its own provenance file and S3 key. Do not overwrite an earlier snapshot or
-silently rewrite its provenance. For a report or notebook combining several
-databases, also create `<analysis-name>_provenance.yaml` that lists every input
-database and the exact join, filtering, deduplication, and denominator rules.
+## Required evidence
 
-Start the record before running or uploading with `status: running`. Complete it
-after validation and S3 verification with `status: completed`, or record
-`failed`/`interrupted` and any partial outputs. A historical backfill must be
-labeled `retrospective`; never present reconstructed commands or dates as observed.
-Use UTC ISO 8601 timestamps. Use `null` with an explanation for unknown or
-inapplicable fields. Never invent provenance.
+1. **Identity:** filename, purpose, run ID, status, dates, parent database, and record method.
+2. **Code:** repository, branch, full commit SHA and verified URL, pre-run clean/dirty state. Preserve and hash any relevant uncommitted, secret-free code outside Git.
+3. **Inputs:** exact snapshots and manifests; local/private-S3 paths, S3 version IDs, bytes, SHA-256, source windows, counts, and acquisition commands. Upload missing required inputs when authorized, verify them, or explain the reproduction limit.
+4. **Execution:** ordered planned and actual commands, directory, shell/runtime, non-secret overrides, times, exit codes, logs, retries, resumes, and script versions. Cover acquisition through upload.
+5. **Methods:** dependency/schema/config/prompt hashes; exact model and effective settings; seeds, concurrency, selection, exclusions, analysis unit, joins, deduplication, missing values, and dose/route/effect attribution.
+6. **Output:** local/S3 paths, version ID, bytes, SHA-256, SQLite integrity, tables/counts, extraction run IDs, and validation commands with expected/observed results. Hash the closed database and verify its S3 copy; ETag is not SHA-256.
+7. **Limits:** errors, corrections, unresolved records, data gaps, eligibility, reproduction limits, and whether effects link to treatment, report, or dose episode.
+8. **Catalog:** after verifying both S3 objects, update `s3://patientpunk/database_catalog/INDEX.md`, creating it from the latest verified inventory if absent. Preserve `INDEX_2026-10-21.md`. Include original and optional catalog-copy URIs, scope label, upload date separate from run date, bytes, SHA-256, and YAML URI. Recalculate totals, timestamp in UTC, upload, and read back the entry. Do not claim completion before verification.
 
-## Minimum evidence to record
-
-1. **Identity and timing:** database filename, purpose, run ID, status, start
-   and completion dates, prior run or parent database, and whether the record is
-   contemporaneous or retrospective.
-2. **Code identity:** repository URL, branch, full `git rev-parse HEAD` SHA,
-   verified GitHub commit URL, and pre-run clean/dirty state. If relevant code
-   was uncommitted, preserve a reviewed, secret-free patch or source snapshot
-   outside Git and record its SHA-256. A commit alone cannot reproduce a dirty
-   run.
-3. **Inputs:** each exact source snapshot, local path, private S3 URI, S3 object
-   version ID if enabled, byte length, SHA-256, source date/window, record count,
-   and acquisition command or an explicit reason it is unavailable. Include
-   upstream databases and manifests. Before marking an S3 database publication
-   complete, upload any necessary input snapshot absent from S3 to an appropriate
-   private prefix when authorized, verify it, and record the immutable URI. If
-   an input cannot be uploaded, state the restriction and reproduction limit.
-4. **Execution:** ordered planned and actually executed commands, including
-   working directory, shell/runtime, non-secret environment overrides, start/end
-   time, exit code, logs, retries, resumes, and versioned scripts. Commands must
-   be sufficient to reproduce from the identified input snapshots. Distinguish
-   source acquisition, extraction, database construction, analysis, and upload.
-5. **Settings and transformations:** dependency lockfile/hash, schema version,
-   config and prompt file hashes, model provider and exact model ID, sampling and
-   reasoning settings, random seeds, workers/batches/retries, selection and
-   exclusion criteria, unit of analysis, joins, deduplication, missing-value
-   treatment, and dose/route/effect attribution rules. Record effective defaults.
-6. **Database output:** local and S3 paths, S3 version ID if available, SHA-256,
-   byte length, SQLite integrity result, table names and row counts, relevant
-   extraction run IDs, and the exact validation commands with expected and
-   observed results. Hash a finalized, closed database snapshot. Verify the S3
-   object against that snapshot; an S3 ETag alone is not a SHA-256 checksum.
-7. **Interpretation:** known errors, manual corrections, unresolved records,
-   eligibility limits, data gaps, unit-of-analysis caveats, and anything that
-   prevents exact reproduction. State whether side effects are linked to a
-   treatment, report, or particular dose episode.
-8. **Database catalog:** after verifying the database and provenance YAML in
-   private S3, update the database directory index under
-   `s3://patientpunk/database_catalog/`. The existing dated inventory is
-   `INDEX_2026-10-21.md`; preserve it as a historical snapshot. Maintain a
-   current `INDEX.md` in that prefix, creating it from the latest verified
-   inventory if absent. Add or update the entry for the exact database object
-   with its original S3 URI, catalog-copy URI if present, accurate treatment or
-   source label, upload date (distinct from run date), byte length, SHA-256, and
-   provenance YAML URI. Recalculate index totals, record the index update UTC,
-   upload the revised index, and read it back to verify the new entry. Do not
-   claim catalog completion until this check succeeds.
-
-Do not include credentials, signed URLs, `.env` contents, raw patient text, or
-direct user identifiers. Do not upload a database or its input data to a public
-bucket. Do not put database files, run-specific YAML, or patient data in Git.
-The final handoff must identify the database snapshot and its local and S3
-provenance paths. Preserve any existing workflow-specific manifests as well.
+Keep credentials, signed URLs, `.env` contents, patient text, identifiers, databases, and run YAML out of Git. Store data only in private S3. Preserve existing manifests and hand off database and provenance locations.
 
 ## YAML shape
 
-The following is a field guide, not permission to fill unknowns by inference.
-Add workflow-specific fields where needed. Replace placeholders with observed
-values, or use `null` and explain why they are unavailable.
+Use observed values; explain `null` fields and add workflow-specific fields as needed.
 
 ```yaml
 schema_version: 1
@@ -159,9 +98,4 @@ limitations: []
 related_manifests: []
 ```
 
-For a multi-database report, set `record_kind: analysis_provenance`, replace
-`database` and `output` with the report identity and outputs, and list every
-input database under `inputs` with its own provenance URI and SHA-256. The
-analysis file must say if an outcome was imported from a different pipeline or
-linked only at author/report level rather than to the same dose episode.
-
+For multi-database work, use `record_kind: analysis_provenance`, identify report outputs, and list each input database's provenance URI and SHA-256. Note outcomes imported from another pipeline or linked only at author/report level.
